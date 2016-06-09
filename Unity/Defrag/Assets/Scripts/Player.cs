@@ -11,8 +11,10 @@ public class Player : MonoBehaviour {
 	[SerializeField] float groundSpeedCap = 7;
 
 	[SerializeField] private float groundAccel = 10f;
+	[SerializeField] private float jumpAccel = 10f;
 	[SerializeField] private float groundFriction = 2f;
 	[SerializeField] private Vector3 velocity;
+	[SerializeField] private float fallVel;
 	[SerializeField] private Vector3 move;
 	[SerializeField] private bool forwardInput;
 	[SerializeField] private bool strafeInput;
@@ -28,41 +30,43 @@ public class Player : MonoBehaviour {
 
 	void Update () 
 	{
+
+		move = new Vector3 (Input.GetAxis ("Horizontal"), 0f, Input.GetAxis ("Vertical"));
+		move = move.normalized;
+		print (move);
+
+		if (move.x != 0) 
+		{
+			move.x *= (groundAccel * Time.deltaTime);
+		}
+		if (move.z != 0) 
+		{
+			move.z *= (groundAccel * Time.deltaTime);
+		}
+		move = transform.TransformVector (move);
+		//Gravity set to 50
+		//fallVel += (Physics.gravity.y * Time.deltaTime);
+
+		if (Grounded ()) 
+		{
+			fallVel = 0;
 		
 
-		velocity.y += (Physics.gravity.y * Time.deltaTime);
-
-		if (Grounded()) 
-		{
-			velocity.y = 0;
-
 			//TODO: condense input IFs into one vector
-			if (Input.GetAxis("Vertical") > 0 || Input.GetAxis("Vertical") < 0) 
+
+
+
+			if (Input.GetButton ("Jump")) 
 			{
-				velocity.z += (Input.GetAxis("Vertical") * (groundAccel)) * (Time.deltaTime * 2) ;
-				forwardInput = true;
-			}
-			else 
-			{
-				forwardInput = false;
+				fallVel = jumpAccel;
 			}
 
-			if (Input.GetAxis("Horizontal") > 0 || Input.GetAxis("Horizontal") < 0) 
-			{
-				velocity.x -= (Input.GetAxis("Horizontal") * (groundAccel)) * (Time.deltaTime * 2) ;
-				print (velocity.x);
-				strafeInput = true;
-			}
-			else 
-			{
-				strafeInput = false;
-			}
 
-			//cap magnitude of that condensed vector to the run spepd cap
-			/*if (velocity.magnitude > groundSpeedCap) 
-			{
-				Vector3.ClampMagnitude (velocity, groundSpeedCap);
-			}*/
+
+		} 
+		else 
+		{
+			fallVel += (Physics.gravity.y * Time.deltaTime);
 		}
 
 		if (Input.GetAxis ("Mouse X") > 0 || Input.GetAxis ("Mouse X") < 0 ) 
@@ -71,24 +75,9 @@ public class Player : MonoBehaviour {
 			transform.Rotate (Vector3.up, playerXRot);
 		}
 
-		if (!forwardInput) 
-		{
-			if (velocity.z > 0)
-				velocity.z -= groundFriction;
-			if (velocity.z < 0)
-				velocity.z += groundFriction;
-			
-			if (velocity.z > -0.2f && velocity.z < 0.2f)
-				velocity.z = 0f;
-		}
-			
-		//oreient that condensed vector to match players local forward
-		move = playerCam.transform.forward;
-		move.x *= velocity.x;
-		move.y = velocity.y;
-		move.z *= velocity.z;
-			
-	
+		move.y = fallVel;
+
+
 	}
 
 	void FixedUpdate ()
@@ -103,7 +92,7 @@ public class Player : MonoBehaviour {
 		downRay.origin = this.gameObject.transform.position;
 		downRay.direction = Vector3.down;
 		RaycastHit hit;
-		Physics.Raycast (downRay,out hit,1.1f);
+		Physics.Raycast (downRay,out hit,2.1f);
 
 		if (hit.collider) 
 		{
