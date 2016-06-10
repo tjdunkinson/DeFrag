@@ -31,6 +31,8 @@ public class Player : MonoBehaviour {
 	void Update () 
 	{
 
+		Cursor.lockState = CursorLockMode.Confined;
+
 		move = new Vector3 (Input.GetAxis ("Horizontal"), 0f, Input.GetAxis ("Vertical"));
 		move = move.normalized;
 		print (move);
@@ -92,7 +94,7 @@ public class Player : MonoBehaviour {
 		downRay.origin = this.gameObject.transform.position;
 		downRay.direction = Vector3.down;
 		RaycastHit hit;
-		Physics.Raycast (downRay,out hit,2.1f);
+		Physics.SphereCast (downRay, 0.5f, out hit, 1.1f);
 
 		if (hit.collider) 
 		{
