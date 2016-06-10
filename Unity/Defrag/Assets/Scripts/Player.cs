@@ -13,11 +13,10 @@ public class Player : MonoBehaviour {
 	[SerializeField] private float groundAccel = 10f;
 	[SerializeField] private float jumpAccel = 10f;
 	[SerializeField] private float groundFriction = 2f;
-	[SerializeField] private Vector3 velocity;
 	[SerializeField] private float fallVel;
+	[SerializeField] private float vertVel;
+	[SerializeField] private float horzVel;
 	[SerializeField] private Vector3 move;
-	[SerializeField] private bool forwardInput;
-	[SerializeField] private bool strafeInput;
 
 
 	void Awake () 
@@ -25,68 +24,47 @@ public class Player : MonoBehaviour {
 
 		rigid = GetComponent<Rigidbody> ();
 		playerCam = Camera.main;
+		Cursor.lockState = CursorLockMode.Confined;
 	
 	}
 
 	void Update () 
 	{
-
-		Cursor.lockState = CursorLockMode.Confined;
-
-		move = new Vector3 (Input.GetAxis ("Horizontal"), 0f, Input.GetAxis ("Vertical"));
-		move = move.normalized;
-		print (move);
-
-		if (move.x != 0) 
-		{
-			move.x *= (groundAccel * Time.deltaTime);
-		}
-		if (move.z != 0) 
-		{
-			move.z *= (groundAccel * Time.deltaTime);
-		}
-		move = transform.TransformVector (move);
-		//Gravity set to 50
-		//fallVel += (Physics.gravity.y * Time.deltaTime);
-
-		if (Grounded ()) 
-		{
-			fallVel = 0;
-		
-
-			//TODO: condense input IFs into one vector
-
-
-
-			if (Input.GetButton ("Jump")) 
-			{
-				fallVel = jumpAccel;
-			}
-
-
-
-		} 
-		else 
-		{
-			fallVel += (Physics.gravity.y * Time.deltaTime);
-		}
-
 		if (Input.GetAxis ("Mouse X") > 0 || Input.GetAxis ("Mouse X") < 0 ) 
 		{
 			float playerXRot = Input.GetAxis ("Mouse X") * mouseXSens;
 			transform.Rotate (Vector3.up, playerXRot);
 		}
+		if (Input.GetAxis ("Mouse Y") > 0 || Input.GetAxis ("Mouse Y") < 0 ) 
+		{
+			float playerYRot = Input.GetAxis ("Mouse Y") * mouseYSens;
+			playerCam.transform.Rotate (Vector3.left, playerYRot);
 
-		move.y = fallVel;
+		}
 
+		move = new Vector3 (horzVel,fallVel,vertVel);
+		move = transform.TransformVector (move);
+
+		if (Grounded ()) 
+		{
+			fallVel = 0f;
+			vertVel = Input.GetAxis ("Vertical") * groundAccel;
+			horzVel = Input.GetAxis ("Horizontal") * groundAccel;
+
+			if (Input.GetButton ("Jump")) 
+				fallVel = jumpAccel;
+		}
+
+		if (!Grounded())
+			fallVel += (Physics.gravity.y * Time.deltaTime);
 
 	}
 
 	void FixedUpdate ()
 	{
 		Grounded ();
-
 		rigid.velocity = move;
+
 	}
 	bool Grounded ()
 	{
@@ -105,6 +83,13 @@ public class Player : MonoBehaviour {
 		} 
 		else
 			return false;
+
+		//OnDrawGizmos (downRay);
 	}
+	/*void OnDrawGizmos (Ray ray)
+	{
+		Gizmos.DrawRay (ray);
+		Gizmos.DrawSphere ((ray.direction.magnitude + 1.1f), 0.5f);
+	}*/
 		
 }
