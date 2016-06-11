@@ -13,10 +13,12 @@ public class Player : MonoBehaviour {
 	[SerializeField] private float groundAccel = 10f;
 	[SerializeField] private float jumpAccel = 10f;
 	[SerializeField] private float groundFriction = 2f;
-	[SerializeField] private float fallVel;
-	[SerializeField] private float vertVel;
-	[SerializeField] private float horzVel;
+	[SerializeField] private float gravity;
+	[SerializeField] private float sailAccel = 8f;
+	[SerializeField] private float frictionDelay = 0.5f;
+	[SerializeField] private float delayTimer;
 	[SerializeField] private Vector3 move;
+
 
 
 	void Awake () 
@@ -24,7 +26,7 @@ public class Player : MonoBehaviour {
 
 		rigid = GetComponent<Rigidbody> ();
 		playerCam = Camera.main;
-		Cursor.lockState = CursorLockMode.Confined;
+		Cursor.lockState = CursorLockMode.Locked;
 	
 	}
 
@@ -39,24 +41,77 @@ public class Player : MonoBehaviour {
 		{
 			float playerYRot = Input.GetAxis ("Mouse Y") * mouseYSens;
 			playerCam.transform.Rotate (Vector3.left, playerYRot);
-
 		}
 
-		move = new Vector3 (horzVel,fallVel,vertVel);
-		move = transform.TransformVector (move);
+		//move = new Vector3 (horzVel,fallVel,vertVel);
+
 
 		if (Grounded ()) 
 		{
-			fallVel = 0f;
-			vertVel = Input.GetAxis ("Vertical") * groundAccel;
-			horzVel = Input.GetAxis ("Horizontal") * groundAccel;
+			move.y = 0f;
+
+			delayTimer -= Time.deltaTime;
+
+			if (delayTimer < 0) 
+			{
+				delayTimer = 0;
+
+				move.z =Input.GetAxis ("Vertical") * groundAccel;
+				move.x = Input.GetAxis ("Horizontal") * groundAccel;
+				move = transform.TransformDirection (move);
+			} 
+			else 
+			{
+				//speedbosting, not working?
+				float speed = 0;
+				Vector2 magCheck = new Vector2 (rigid.velocity.x, rigid.velocity.z);
+				if (magCheck.magnitude > groundAccel)
+				{
+					speed = (magCheck.magnitude - groundAccel) /2;
+					//apply speedBoost to move
+				}
+
+				Vector3 speedBoost = move;
+				speedBoost = transform.InverseTransformDirection (speedBoost);
+				speedBoost.z = ((Input.GetAxis ("Vertical") * groundAccel) + speed);
+				speedBoost.x = ((Input.GetAxis ("Horizontal") * groundAccel) + speed);
+				speedBoost = transform.TransformDirection (speedBoost);
+				move.x = speedBoost.x;
+				move.z = speedBoost.z;
+
+				move = transform.TransformDirection (move);
+			}
 
 			if (Input.GetButton ("Jump")) 
-				fallVel = jumpAccel;
+			{
+				Vector2 magCheck = new Vector2 (rigid.velocity.x, rigid.velocity.z);
+				if (magCheck.magnitude > groundAccel)
+				{
+					float speedBoost = magCheck.magnitude - groundAccel;
+					//apply speedBoost to move
+
+				}
+
+				move.y = jumpAccel;
+
+
+			}
+
+
 		}
 
-		if (!Grounded())
-			fallVel += (Physics.gravity.y * Time.deltaTime);
+		if (!Grounded ()) 
+		{
+			Vector3 airAccel = move;
+			airAccel = transform.InverseTransformDirection (airAccel);
+			airAccel.x += (Input.GetAxis ("Horizontal") * sailAccel) * Time.deltaTime;
+			airAccel = transform.TransformDirection (airAccel);
+			move.x = airAccel.x;
+			move.z = airAccel.z;
+
+			move.y += (gravity * Time.deltaTime);
+			delayTimer = frictionDelay;
+		}
 
 	}
 
@@ -64,6 +119,7 @@ public class Player : MonoBehaviour {
 	{
 		Grounded ();
 		rigid.velocity = move;
+		print (rigid.velocity.magnitude);
 
 	}
 	bool Grounded ()
@@ -72,24 +128,23 @@ public class Player : MonoBehaviour {
 		downRay.origin = this.gameObject.transform.position;
 		downRay.direction = Vector3.down;
 		RaycastHit hit;
-		Physics.SphereCast (downRay, 0.5f, out hit, 1.1f);
+		Physics.SphereCast (downRay, 0.5f, out hit, 1f);
 
 		if (hit.collider) 
 		{
-			if (hit.collider.gameObject.layer == 9)
+			if (hit.collider.gameObject.layer == 9) 
+			{
+				/*Vector3 offest = hit.point;
+				offest.y = offest.y + 2f;
+				transform.position = offest;*/
 				return true;
+			}
 			else
 				return false;
 		} 
 		else
 			return false;
 
-		//OnDrawGizmos (downRay);
 	}
-	/*void OnDrawGizmos (Ray ray)
-	{
-		Gizmos.DrawRay (ray);
-		Gizmos.DrawSphere ((ray.direction.magnitude + 1.1f), 0.5f);
-	}*/
 		
 }
