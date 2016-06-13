@@ -32,6 +32,7 @@ public class Player : MonoBehaviour {
 
 	void Update () 
 	{
+		Grounded ();
 		if (Input.GetAxis ("Mouse X") > 0 || Input.GetAxis ("Mouse X") < 0 ) 
 		{
 			float playerXRot = Input.GetAxis ("Mouse X") * mouseXSens;
@@ -48,6 +49,7 @@ public class Player : MonoBehaviour {
 
 		if (Grounded ()) 
 		{
+			print (rigid.velocity.magnitude);
 			move.y = 0f;
 
 			delayTimer -= Time.deltaTime;
@@ -56,7 +58,7 @@ public class Player : MonoBehaviour {
 			{
 				delayTimer = 0;
 
-				move.z =Input.GetAxis ("Vertical") * groundAccel;
+				move.z = Input.GetAxis ("Vertical") * groundAccel;
 				move.x = Input.GetAxis ("Horizontal") * groundAccel;
 				move = transform.TransformDirection (move);
 			} 
@@ -65,33 +67,23 @@ public class Player : MonoBehaviour {
 				//speedbosting, not working?
 				float speed = 0;
 				Vector2 magCheck = new Vector2 (rigid.velocity.x, rigid.velocity.z);
+				//print ("RigidVel X & Z "+magCheck);
+				//print ("Move.X " + move.x + " Move.Z " + move.z);
 				if (magCheck.magnitude > groundAccel)
 				{
-					speed = (magCheck.magnitude - groundAccel) /2;
+					speed = (magCheck.magnitude - groundAccel) /2.5f;
 					//apply speedBoost to move
+					move.z = Input.GetAxis ("Vertical") * (groundAccel + speed);
+					move.x = Input.GetAxis ("Horizontal") * (groundAccel + speed);
+					move = transform.TransformDirection (move);
 				}
+					
 
-				Vector3 speedBoost = move;
-				speedBoost = transform.InverseTransformDirection (speedBoost);
-				speedBoost.z = ((Input.GetAxis ("Vertical") * groundAccel) + speed);
-				speedBoost.x = ((Input.GetAxis ("Horizontal") * groundAccel) + speed);
-				speedBoost = transform.TransformDirection (speedBoost);
-				move.x = speedBoost.x;
-				move.z = speedBoost.z;
-
-				move = transform.TransformDirection (move);
+				//move = transform.TransformDirection (move);
 			}
 
 			if (Input.GetButton ("Jump")) 
 			{
-				Vector2 magCheck = new Vector2 (rigid.velocity.x, rigid.velocity.z);
-				if (magCheck.magnitude > groundAccel)
-				{
-					float speedBoost = magCheck.magnitude - groundAccel;
-					//apply speedBoost to move
-
-				}
-
 				move.y = jumpAccel;
 
 
@@ -117,9 +109,9 @@ public class Player : MonoBehaviour {
 
 	void FixedUpdate ()
 	{
-		Grounded ();
+		
 		rigid.velocity = move;
-		print (rigid.velocity.magnitude);
+
 
 	}
 	bool Grounded ()
