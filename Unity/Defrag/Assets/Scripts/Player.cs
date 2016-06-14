@@ -120,7 +120,7 @@ public class Player : MonoBehaviour {
 		downRay.origin = this.gameObject.transform.position;
 		downRay.direction = Vector3.down;
 		RaycastHit hit;
-		Physics.SphereCast (downRay, 0.5f, out hit, 1f);
+		Physics.SphereCast (downRay, 1f, out hit, 2f);
 
 		if (hit.collider) 
 		{
